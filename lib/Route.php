@@ -33,8 +33,25 @@ class Route {
         
         foreach (self::$routes[$method] as $route => $callback) :
 
-            if( $route == $uri ):
-                $callback();
+            if( strpos($route, ':') !== false) : # verifica si dentro de la ruta existe : 
+                $route = preg_replace( '#:[a-zA-Z]+#', '([a-zA-Z]+)', $route);
+            endif;
+
+            if( preg_match( "#^$route$#", $uri, $matches ) ) :
+
+                $params = array_slice( $matches ,1 );
+                $response = $callback(...$params);
+                
+                if( is_string($response)):
+                    echo $response;
+                    return ;
+                endif;
+
+                if( is_array($response) || is_object($response) ) :
+                    header('content-type', 'application/json');
+                    echo json_encode($response);
+                endif;
+
                 return ;
             endif;
 
