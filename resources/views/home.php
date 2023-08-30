@@ -6,6 +6,9 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>Hola desde view home</h1>
+    <h1>Hola desde view </h1>
+
+    <p>titulo <?= $title?></p>
+    <p>titulo <?= $description?></p>
 </body>
 </html>

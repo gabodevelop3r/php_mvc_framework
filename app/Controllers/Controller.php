@@ -4,10 +4,11 @@ namespace App\Controllers;
 
 class Controller{
 
-    public function view( string $filePath ){
-
+    public function view( string $filePath, $data = [] ){
+        
+        extract($data); # destructure data array
+    
         $filePath = str_replace('.', '/', $filePath);
-
 
         $baseDir = ( string ) '../resources/views/';
         $extention = ( string ) '.php';
