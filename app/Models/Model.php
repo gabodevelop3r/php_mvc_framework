@@ -27,8 +27,19 @@ class Model {
 
     }
 
-    public function query( string $sql ){
-        $this->query = $this->connection->query( $sql );
+    public function query( string $sql, $data = [], $params = null ){
+
+        if( $data ):
+            if( !$params )
+                $params = str_repeat('s', count( $data ) );   
+            $stmt = $this->connection->prepare( $sql );
+            $stmt->bind_param( $params, ...$data );
+            $stmt->execute( );
+            $this->query = $stmt->get_result();
+        else:
+            $this->query = $this->connection->query( $sql );
+        endif;
+        
         return $this;
     }
 
@@ -48,8 +59,8 @@ class Model {
     }
 
     public function find( int $id ){
-        $sql = "SELECT * FROM $this->table WHERE id = $id";
-        return $this->query($sql)->first();
+        $sql = "SELECT * FROM $this->table WHERE id = ?";
+        return $this->query($sql, [$id], 'i')->first();
     }
 
     public function where(string $column, string $operator, $value = null ) : self
@@ -60,41 +71,46 @@ class Model {
             $operator = '=';
         endif;
 
-        $sql = "SELECT * FROM $this->table WHERE $column $operator '$value'";
-        $this->query( $sql );
+        $value = $this->connection->real_escape_string($value);
+
+        $sql = "SELECT * FROM $this->table WHERE $column $operator ?";
+
+        $this->query( $sql, [$value], 's' );
+
         return $this;
     }
 
     public function create( array $data ) : array
     {
 
-        $colums = implode(',',array_keys($data)); # transformar array en una cadena
-        $values = "'". implode("', '", array_values($data)) ."'";
-        $sql = "INSERT INTO $this->table ($colums)  VALUES ($values)";
-        $this->query( $sql );
+        $colums = implode(',',array_keys( $data ) ); # transformar array en una cadena
+        $values = array_values( $data );
+        $sql = "INSERT INTO $this->table ($colums)  VALUES (".str_repeat('?, ', count( $values ) - 1 )."?)";
+        $this->query( $sql, $values, str_repeat('s', count( $values ) ) );
         return $this->find($this->connection->insert_id);
 
     }
 
-    public function update( $id, $data ) : array
+    public function update( int $id, array $data )  : array
     {
         $fields = array();
         
         foreach( $data as $key => $value)
-            array_push( $fields, "$key = '$value'" );
+            array_push( $fields, "$key = ?" );
         
         $fields = implode(', ', $fields);
-        $sql = "UPDATE $this->table SET $fields WHERE $id = $id";
-
-        $this->query( $sql );
+        $sql = "UPDATE $this->table SET $fields WHERE id = ?";
+        $values = array_values( $data ); 
+        $values[] = $id; 
+        $this->query( $sql, $values, str_repeat('s', count( $values ) ) );
 
         return $this->find( $id );
     }
 
-    public function delete( $id ) : void
+    public function delete( int $id ) : void
     {
 
-        $sql = "DELETE FROM $this->table WHERE id = $id";
-        $this->query($sql);
+        $sql = "DELETE FROM $this->table WHERE id = ?";
+        $this->query( $sql, [ $id ] , 'i' );
     }
 }
