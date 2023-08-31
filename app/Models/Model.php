@@ -36,11 +36,13 @@ class Model {
         return $this->query->fetch_assoc();
     }
 
-    public function get(){
+    public function get() : array
+    {
         return $this->query->fetch_all(MYSQLI_ASSOC);
     }
     // consultas
-    public function all(){
+    public function all() : array
+    {
         $sql = "SELECT * FROM $this->table";
         return $this->query($sql)->get();
     }
@@ -72,5 +74,27 @@ class Model {
         $this->query( $sql );
         return $this->find($this->connection->insert_id);
 
+    }
+
+    public function update( $id, $data ) : array
+    {
+        $fields = array();
+        
+        foreach( $data as $key => $value)
+            array_push( $fields, "$key = '$value'" );
+        
+        $fields = implode(', ', $fields);
+        $sql = "UPDATE $this->table SET $fields WHERE $id = $id";
+
+        $this->query( $sql );
+
+        return $this->find( $id );
+    }
+
+    public function delete( $id ) : void
+    {
+
+        $sql = "DELETE FROM $this->table WHERE id = $id";
+        $this->query($sql);
     }
 }
